@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:tokokita/bloc/produk_bloc.dart';
 import 'package:tokokita/model/produk.dart';
 import 'package:tokokita/ui/produk_form.dart';
+import 'package:tokokita/ui/produk_page.dart';
+import 'package:tokokita/widget/warning_dialog.dart';
 
 class ProdukDetail extends StatefulWidget {
   final Produk? produk;
 
-  ProdukDetail({Key? key, this.produk}) : super(key: key);
+  const ProdukDetail({Key? key, this.produk}) : super(key: key);
 
   @override
   _ProdukDetailState createState() => _ProdukDetailState();
@@ -16,23 +19,22 @@ class _ProdukDetailState extends State<ProdukDetail> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detail Produk Farah'),
+        title: const Text('Detail Produk'),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Kode: ${widget.produk!.kodeProduk}",
+              "Kode : ${widget.produk?.kodeProduk}",
               style: const TextStyle(fontSize: 20.0),
             ),
             Text(
-              "Nama: ${widget.produk!.namaProduk}",
+              "Nama : ${widget.produk?.namaProduk}",
               style: const TextStyle(fontSize: 18.0),
             ),
             Text(
-              "Harga: Rp. ${widget.produk!.hargaProduk.toString()}",
+              "Harga : Rp. ${widget.produk?.hargaProduk.toString()}",
               style: const TextStyle(fontSize: 18.0),
             ),
             const SizedBox(height: 20.0),
@@ -43,7 +45,6 @@ class _ProdukDetailState extends State<ProdukDetail> {
     );
   }
 
-  // Membuat tombol Edit dan Hapus
   Widget _tombolHapusEdit() {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -55,44 +56,61 @@ class _ProdukDetailState extends State<ProdukDetail> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ProdukForm(produk: widget.produk!),
+                builder: (context) => ProdukForm(
+                  produk: widget.produk!,
+                ),
               ),
             );
           },
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 10.0),
         // Tombol Hapus
         OutlinedButton(
           child: const Text("DELETE"),
-          onPressed: () => confirmHapus(),
+          onPressed: () => _confirmHapus(),
         ),
       ],
     );
   }
 
-  // Menampilkan konfirmasi hapus
-  void confirmHapus() {
-    AlertDialog alertDialog = AlertDialog(
-      content: const Text("Yakin ingin menghapus data ini?"),
-      actions: [
-        // Tombol Ya (Hapus)
-        OutlinedButton(
-          child: const Text("Ya"),
-          onPressed: () {
-            // Logika penghapusan data bisa diletakkan di sini
-          },
-        ),
-        // Tombol Batal
-        OutlinedButton(
-          child: const Text("Batal"),
-          onPressed: () => Navigator.pop(context),
-        )
-      ],
-    );
-
+  void _confirmHapus() {
     showDialog(
       context: context,
-      builder: (context) => alertDialog,
+      builder: (context) => AlertDialog(
+        content: const Text("Yakin ingin menghapus data ini?"),
+        actions: [
+          // Tombol Ya
+          OutlinedButton(
+            child: const Text("Ya"),
+            onPressed: () {
+              final id = widget.produk?.id;
+              if (id != null) {
+                ProdukBloc.deleteProduk(id: id).then(
+                  (value) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                          builder: (context) => const ProdukPage()),
+                    );
+                  },
+                  onError: (error) {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) => const WarningDialog(
+                        description: "Hapus gagal, silahkan coba lagi",
+                      ),
+                    );
+                  },
+                );
+              }
+            },
+          ),
+          // Tombol Batal
+          OutlinedButton(
+            child: const Text("Batal"),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
     );
   }
 }
